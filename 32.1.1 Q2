@@ -1,0 +1,89 @@
+processor 18f8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:     
+    ;inputs 
+    movlw 15
+    movwf ADCON1, a
+    
+    movlw 00000000B
+    movwf TRISF, a 
+    
+    movlw 11101111B
+    movwf TRISA, a
+    
+    
+LED8:
+    movlw 10000000B
+    movwf LATF, a 
+    bsf LATA, 4, a
+    call sub1s
+    bcf LATA, 4, a 
+    call subx
+    bra LED8
+    
+sub220us:
+    movlw 200
+    movwf x
+delay:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    decf x, a
+    bnz delay
+    return
+
+sub44ms:
+    movlw 200
+    movwf y
+dela:
+    call sub220us
+    nop 
+    nop
+    decf y
+    bnz dela
+    return
+
+sub1s:
+    movlw 23
+    movwf z 
+del:
+    call sub44ms 
+    decf z
+    bnz del
+    return
+    
+subx:
+    movlw 2
+    movwf de
+slay:
+    call sub1s
+    decf de
+    bnz slay
+    return
+    
+end 
