@@ -1,0 +1,96 @@
+processor 18F8722 
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global r,I 
+  r: ds 1 
+  I: ds 1 
+       
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:   
+    ;
+    ;Figure out the inputs 
+    movlw 15
+    movwf ADCON1, a ;sets all input as digital 
+    
+    movlw 00111100B ;input for the right hand switches portc
+    movwf TRISC, a 
+    
+    movlw 11110011B ;input output for porth set q1 and q2 as input so that doesnt interfere with the 
+    movwf TRISH, a 
+    
+    movlw 00000000B
+    movwf TRISF, a ;set portf as all of output 
+    
+    movlw 11101111B ;set Q3 i.e RA4 as output 
+    movwf TRISA, a 
+    
+    ;bsf LATA, 4, a ;set bit 4 as high to allow flow to the leds 
+    
+Port:
+    movf PORTC, W, a ;moving portc into the working register 
+    andlw 00111100B ;masking bits we dont need we only need RC5-2
+    movwf r, a 
+    rrncf r, f 
+    rrncf r, f ;rotate 2 times to align it to the rhs 
+    
+    
+    
+    movf PORTH, W, a 
+    andlw 11110000B ; read left most switches i.e porth 7-4 and mask the bits we dont need i.e. RH0-3
+    movwf I, a ;move the value into I 
+    rrncf I, f 
+    rrncf I, f
+    rrncf I, f
+    rrncf I, f ; rotate 4 times to align it to the rhs 
+Check:
+    ;moving I into the wreg so when we do the substract subwf itll be I-r
+    movf I, W, a ;move I into wreg
+    subwf r, a ;subtracts wreg from r so i.e. r-I 
+    bz ALLON ;IF r=I i.e the substraction will be zero so zero flag Z=1 so use bz
+    bnc LED7 ;IF r<I so the substraction will borrow i.e. C=0 (carry flag will be 0)
+    bra LED1 ;If the other conditions are not met branch to led 1 
+LED1:
+    ;turn on only LED1 i.e. bit 0 set it as 1 into LATF
+    movlw 00000001B
+    movwf LATF, a ;set 1 into LED1 to turn it on 
+    
+    bsf LATA, 4, a ;set q3 as 1 to turn it on 
+    bcf LATA, 4, a ;set q3 as 0 to turn it off 
+    
+    bra Port 
+    
+ALLON:
+    ;turning all leds on
+    movlw 11111111B
+    movwf LATF, a ;turning all of them on
+    
+    bsf LATA, 4, a 
+    bcf LATA, 4, a ;turning on and off q3 
+    
+    bra Port ; loop back to the main loop 
+    
+    
+LED7:
+    ;turning led7 on only i.e bit6 is 1 
+    movlw 01000000B
+    movwf LATF, a ;turning LED7 is on 
+    
+    bsf LATA, 4, a 
+    bcf LATA, 4, a ;turning q3 on and off 
+    
+    bra Port 
+    
+end     
+
+    
