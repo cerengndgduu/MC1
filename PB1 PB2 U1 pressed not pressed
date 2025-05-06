@@ -1,0 +1,108 @@
+; If PB1 is pressed display 1 in U1 
+; If PB2 is pressed display 0 in U1
+; If both are pressed display 2 in U1     
+;If buttons are pressed it is zero    
+  
+processor 18f8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:  
+    ;setting inputs for u1 pb1 pb2 set q2 as output only (U1 IS BIT 1 ITS OPPOSITE )
+     movlw 15
+     movwf ADCON1   ;make all inputs digital
+     
+     movlw 00000000B
+     movwf TRISF ;for to put the code for displays so output
+     
+     movlw 00000001B
+     movwf TRISH ; only make Q2 i.e. RH1 as output and make Q1 input to deactivate
+     
+     movlw 00100000B
+     movwf TRISJ ;make bit 5 as input to read PB1 
+     
+     movlw 00000001B
+     movwf TRISB ; set RB0 as input for pb2 
+     
+     bcf LATH, 1
+main:    
+    
+    movf PORTJ, W ; for pb1 checking if it pressed (i.e. bit 5 check if pressed i.e. if it is 0)
+    andlw 00100000B
+    movwf x ;move the input to variable x 
+    
+    movf PORTB, W ; checking pb2 with RB0 if pressed (i.e. bit 0 is gonna be 0 )
+    andlw 00000001B
+    movwf y
+    
+    
+    
+check_both:
+    movf y, W ; move y into the working register then subwf so x-y
+    subwf x ;substract x-y so if both are pressed the result will be 0 if one is pressed itll be not zero and if both are unpressed itll be not zero too
+    bz both_two
+    bra check_pb1 
+    
+
+check_pb1: 
+    movlw 11111111B
+    movwf LATF
+    
+    BTFSC PORTJ, 5 ;check bit 5 is CLEAR , if clear skip next code 
+    bra check_pb2 
+    bra one
+    
+    
+    
+check_pb2:    
+    BTFSC y, 0 ;check bit 0 is clear if clear skip the next code 
+    bra main
+    bra zero
+    
+
+    
+one:
+    movlw 11110101B ; bit code for 1 
+    movwf LATF
+    
+    bsf LATH, 1 ;turn on q2 for U2 (i.e. in real lif U1 is U2 )
+    bcf LATH, 1 
+    bra main
+    
+zero:
+    movlw 10000100B ;bit code for zero
+    movwf LATF
+    
+    bsf LATH, 1 ;turn on q2 for U2 (i.e. in real lif U1 is U2 )
+    bcf LATH, 1 
+    bra main
+   
+both_two:
+    movlw 01001100B ; code for two
+    movwf LATF
+    
+    bsf LATH, 1 ;turn on q2 for U2 (i.e. in real lif U1 is U2 )
+    bcf LATH, 1 
+    bra main
+    ; What does this code does = IF both are unpressed and when pb1 is pressed it displays 1 in U1. If only pb2 is pressed it displays 0 on U1 if both pressed it displays 2
+end    
+    
+
