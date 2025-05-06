@@ -1,0 +1,92 @@
+processor 18f8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:  
+    ;setting inputs for u1 pb1 pb2 set q2 as output only (U1 IS BIT 1 ITS OPPOSITE )
+     movlw 15
+     movwf ADCON1   ;make all inputs digital
+     
+     movlw 00000000B
+     movwf TRISF ;for to put the code for displays so output
+     
+     movlw 00000001B
+     movwf TRISH ; only make Q2 i.e. RH1 as output and make Q1 input to deactivate
+     
+     movlw 00100000B
+     movwf TRISJ ;make bit 5 as input to read PB1 
+     
+     movlw 00000001B
+     movwf TRISB ; set RB0 as input for pb2 
+     
+     bcf LATH, 1
+ 
+    
+  
+    
+check_press:
+    BTFSS PORTJ, 5 ; if pressed itll move onto pb1
+    bra PB1PRESSED
+    
+    BTFSS PORTB, 0
+    bra PB2PRESSED
+    
+    movlw 10000100B
+    movwf LATF ; if none are pressed display 0 
+    bsf LATH, 1 
+    bcf LATH, 1
+    
+PB1PRESSED:
+    BTFSS PORTB, 0 ; if pressed itll move onto both pressed 
+    bra BOTHPRESSED
+    
+    movlw 11110101B ;if portb is not pressed itll display 1
+    movwf LATF 
+    
+    bsf LATH, 1
+    bcf LATH, 1 
+    bra check_press
+    
+PB2PRESSED:
+    BTFSS PORTJ, 5
+    bra BOTHPRESSED 
+    
+    movlw 11110101B ;if portj is not pressed itll display 1
+    movwf LATF 
+    
+    bsf LATH, 1
+    bcf LATH, 1 
+    bra check_press
+    
+BOTHPRESSED:
+    ;BTFSS PORTJ, 5 
+    ;bra check_press
+    
+    ;BTFSS PORTB, 0
+    ;bra check_press
+    
+    movlw 01001100B
+    movwf LATF 
+    
+    bsf LATH, 1 
+    bcf LATH, 1 
+    
+end    
