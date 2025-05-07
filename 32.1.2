@@ -1,0 +1,79 @@
+processor 18F8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:  
+    movlw 15
+    movwf ADCON1 ; all inputs are digital
+    
+    movlw 00111100B
+    movwf TRISC
+    
+    movlw 11110011B
+    movwf TRISH
+    
+    clrf TRISF
+    
+    movlw 11101111B
+    movwf TRISA
+    
+    bcf LATA, 4
+    
+main:
+    movf PORTC, W
+    andlw 00111100B
+    movwf x 
+    rrncf x, f 
+    rrncf x, f 
+    
+    movf PORTH, W
+    andlw 11110000B
+    movwf y 
+    rrncf y, f
+    rrncf y, f
+    rrncf y, f
+    rrncf y, f
+    nop 
+    call function
+    movf z, W 
+    movwf LATF 
+    bsf LATA, 4
+    bra main
+
+
+
+
+
+function:
+    ; z=x.y so 2.3=2+2+2 so x+x+x y times 
+    clrf z
+plus:    
+    movf x, W 
+    addwf z ; so if y is 1
+    decf y
+    bnz plus 
+    return  ;this code adds x to z the amount of times y so like z=x for first bc z=x when y = 1 and remeber x and y are in binary too 
+    
+
+end     
+    
+
