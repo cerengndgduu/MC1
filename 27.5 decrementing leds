@@ -1,0 +1,87 @@
+processor 18f8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:  
+    ;setting inputs for u1 pb1 pb2 set q2 as output only (U1 IS BIT 1 ITS OPPOSITE )
+     movlw 15
+     movwf ADCON1   ;make all inputs digital
+     
+     movlw 00000000B
+     movwf TRISF
+     
+     movlw 11101111B
+     movwf TRISA 
+     
+     bcf LATA, 4
+ 
+     
+main:
+    movlw 100
+    movwf x
+    
+slay: 
+    movf x, W
+    movwf LATF
+    
+    bsf LATA, 4
+    call subdelay
+    bcf LATA, 4
+    
+    movf x, W
+    addlw -1
+    movwf x 
+    bnz slay
+    
+    
+lend: bra lend    
+    
+subdelay718us:
+    movlw 199
+    movwf y
+delay:    
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    decf y
+    bnz delay
+    return
+    
+
+subdelay2ms:
+    movlw 3
+    movwf de
+dela: 
+    call subdelay718us
+    decf de 
+    bnz dela 
+    return
+subdelay:
+    movlw 94
+    movwf z
+del:
+    call subdelay2ms 
+    decf z 
+    bnz del
+    retur
