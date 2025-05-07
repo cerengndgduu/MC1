@@ -1,0 +1,81 @@
+processor 18F8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:    
+    movlw 15
+    movwf ADCON1
+    
+    movlw 00111100B
+    movwf TRISC
+    
+    movlw 11110011B
+    movwf TRISH
+    
+    movlw 00000000B
+    movwf TRISF
+    
+    movlw 11101111B
+    movwf TRISA
+    ;inputs for C H for swithces and output for q3 and leds
+    ;adcon1 for all digital input 
+    bcf LATA, 4 
+    
+read:
+    movf PORTC, W
+    andlw 00111100B
+    movwf x 
+    rrncf x, f
+    rrncf x, W
+    movwf x 
+    
+    
+    movf PORTH, W 
+    andlw 11110000B
+    movwf y 
+    
+combine:
+    movf y, W
+    iorwf x, W ; combining both
+    movwf z ; z stores in 8 bit 
+check: ; check for lower limit
+    ;check if z is between 18 and 36
+    movf z, W
+    sublw 18 ; if 18 or more branch to second check  if it is less than 36 too
+    ; 18-z
+    bnc check2 ; if carry is c=0 so z is bigger than 18 check
+    bz led5 ; if it is 18 branch to led 5 if more than 18 it could be more than 36 too so need to check
+    bra read 
+check2: ; to check the upper limit     
+    movf z, W
+    sublw 36 ; 36-z 
+    bz led5 
+    bnn led5 ; branch if not negative 
+    bra read
+    
+led5:
+    movlw 00010000B ;LED5 is bit 4 
+    movwf LATF
+    bsf LATA, 4
+    bcf LATA, 4 
+    bra read
+end    
+    
