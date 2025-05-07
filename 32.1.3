@@ -1,0 +1,97 @@
+; Aim:read twos  compliment i.e. positive negative values , from thw switches 
+; If x<44 LED7 is on
+; If x == -2 LED8 is on    
+    
+    
+processor 18F8722
+radix dec 
+    
+CONFIG OSC = HS
+CONFIG WDT = OFF
+CONFIG LVP = OFF
+    
+#include<xc.inc>
+t equ  44
+ 
+PSECT udata_acs
+ global x,y,z,de,sl,ay
+  x: ds 1 
+  y: ds 1 
+  z: ds 1 
+  de: ds 1 
+  sl: ds 1
+  ay: ds 1  
+PSECT resetVector, class=CODE, reloc=2
+resetVector:
+    goto start
+    
+PSECT start, class=CODE, reloc=2 
+start:  
+    movlw 15
+    movwf ADCON1 ; all inputs are digital
+    
+    movlw 00111100B
+    movwf TRISC ;portc input
+    
+    movlw 11110011B
+    movwf TRISH
+    
+    movlw 00000000B
+    movwf TRISF 
+    
+    movlw 11101111B
+    movwf TRISA 
+    ;input for ports and output for leds 
+    bcf LATA, 4
+    
+main:
+    movf PORTC, W 
+    andlw 00111100B
+    movwf x 
+    rrncf x, f 
+    rrncf x, f 
+    
+    movf PORTH, W
+    andlw 11110000B
+    movwf y 
+    
+combine:
+    movf y, W
+    iorwf x, W
+    movwf z 
+    
+test:
+    ;checking if x == -2 . -2= 11111110 and 2 = 00000010 
+    ; addition if both 1 itll be zero with carry 
+    movf z, W
+    addlw 2 ; add literal and wreg so 11111110+00000010 =  0
+    bz LED8 ; if result is zero goto led 8 could use a carry flag too itll have a carry c=1
+    bra test1
+    
+test1: ; check if it is less than 44 but keep in mind that z can be negative so we want z-44 and if answer is negative branch to led7
+    movlw 44
+    subwf z ; z-44 if less than 44 itll be negative
+    bn LED7
+    bra main
+  
+    
+    
+    
+    
+LED8:
+    movlw 10000000B
+    movwf LATF 
+    
+    bsf LATA, 4
+    bcf LATA, 4
+    bra main
+    
+LED7:   
+    movlw 01000000B
+    movwf LATF 
+    
+    bsf LATA, 4
+    bcf LATA, 4
+    bra main
+
+end
